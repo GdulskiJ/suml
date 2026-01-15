@@ -2,7 +2,6 @@ from datetime import date
 import meteostat as ms
 import pandas as pd
 import time
-from meteostat import daily
 
 # -----------------------------
 # Lista miast jako Point
@@ -49,7 +48,7 @@ cities = {
 # Zakres czasu
 # -----------------------------
 start = date(2010, 1, 1)
-end = date.today()  # nigdy przyszła data
+end = date.today()  # ❗ NIE używamy przyszłej daty
 
 # -----------------------------
 # Pobieranie danych
@@ -59,19 +58,24 @@ all_data = []
 for city, point in cities.items():
     print(f"Pobieram dane dla {city}...")
 
-    # Pobranie danych dziennych bez stacji
-    ts = ms.daily(point, start, end)
+    stations = ms.stations.nearby(point, limit=1)
+
+    if stations.empty:
+        print(f"⚠️ Brak stacji dla {city}")
+        continue
+
+    station_id = stations.index[0]
+
+    ts = ms.daily(station_id, start, end)
     df = ts.fetch()
 
     if df is None or df.empty:
         print(f"⚠️ Brak danych dla {city}")
         continue
 
-    # Wyrównanie kalendarza i uzupełnienie braków
-    df = df.asfreq("D").ffill()
-
     df = df.reset_index()
     df["city"] = city
+    df["station_id"] = station_id
 
     all_data.append(df)
 
