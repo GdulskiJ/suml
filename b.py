@@ -2,7 +2,7 @@ from datetime import date
 import meteostat as ms
 
 # Set time period
-start = date(2010, 1, 1)
+start = date(2026, 1, 1)
 end = date(2026, 1, 15)
 
 # Get daily data
