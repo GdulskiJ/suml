@@ -1,14 +1,13 @@
 import streamlit as st
 import pandas as pd
 import pydeck as pdk
-import random
 import plotly.express as px
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime
 
 API_KEY = "efba767b41bf0e2cffddc62cd20c02a6"
 
-# --- Dane lokalizacji ---
+# ===================== DANE LOKALIZACJI =====================
 locations = {
     "Warszawa": (52.23, 21.01),
     "Berlin": (52.52, 13.40),
@@ -33,106 +32,104 @@ locations = {
     "Tallinn": (59.44, 24.75),
     "Ryga": (56.95, 24.11),
     "Wilno": (54.69, 25.28),
-    "Valletta": (35.89, 14.51),
-    "Luxemburg": (49.61, 6.13),
-    "Vaduz": (47.14, 9.52),
-    "Monako": (43.73, 7.42),
-    "Andora la Vella": (42.51, 1.52),
-    "San Marino": (43.94, 12.45),
-    "Kiszyniów": (47.01, 28.86),
-    "Sarajewo": (43.85, 18.35),
-    "Podgorica": (42.44, 19.26),
-    "Skopje": (41.99, 21.43),
-    "Tirana": (41.33, 19.82),
-    "Mińsk": (53.90, 27.57),
-    "Ljubljana": (46.05, 14.51),
-    "Zagrzeb": (45.81, 15.98),
-    "Kijów": (50.45, 30.52),
-    "Moskwa": (55.75, 37.62),
     "Reykjavik": (64.14, -21.94)
 }
 
-# --- DataFrame ---
-df = pd.DataFrame([{"city": city, "lat": coords[0], "lon": coords[1]} for city, coords in locations.items()])
+df_locations = pd.DataFrame(
+    [{"city": c, "lat": v[0], "lon": v[1]} for c, v in locations.items()]
+)
 
-# --- Funkcja pobierająca bieżącą pogodę ---
+# ===================== WCZYTANIE PROGNOZ =====================
+df_forecast = pd.read_csv(
+    r"C:\Users\gduls\PycharmProjects\suml\forecasts\forecast_avg_5dni.csv",
+    parse_dates=["date"]
+)
+
+# ===================== API – BIEŻĄCA POGODA =====================
 def get_current_weather(lat, lon):
-    url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&units=metric&lang=pl&appid={API_KEY}"
+    url = (
+        "https://api.openweathermap.org/data/2.5/weather"
+        f"?lat={lat}&lon={lon}&units=metric&lang=pl&appid={API_KEY}"
+    )
     try:
         r = requests.get(url)
         data = r.json()
         return {
-            "temperatura": round(data["main"]["temp"]),
-            "wilgotność": data["main"]["humidity"],
-            "wiatr": round(data["wind"]["speed"] * 3.6),  # m/s -> km/h
-            "opis": data["weather"][0]["description"].capitalize(),
-            "ikona": f"http://openweathermap.org/img/wn/{data['weather'][0]['icon']}@2x.png"
+            "temp": round(data["main"]["temp"]),
+            "humidity": data["main"]["humidity"],
+            "wind": round(data["wind"]["speed"] * 3.6),
+            "desc": data["weather"][0]["description"].capitalize(),
+            "icon": f"http://openweathermap.org/img/wn/{data['weather'][0]['icon']}@2x.png"
         }
     except:
-        return {"temperatura": None, "wilgotność": None, "wiatr": None, "opis": "Brak danych", "ikona": ""}
+        return None
 
-# --- Funkcja generująca prognozę 5-dniową demo ---
-def fake_forecast_5days():
-    days = [datetime.now() + timedelta(days=i) for i in range(1, 6)]
-    dni_pl_map = {
-        "Monday": "Poniedziałek",
-        "Tuesday": "Wtorek",
-        "Wednesday": "Środa",
-        "Thursday": "Czwartek",
-        "Friday": "Piątek",
-        "Saturday": "Sobota",
-        "Sunday": "Niedziela"
-    }
-    dni_pl = [dni_pl_map[d.strftime("%A")] for d in days]
-    temps = [random.randint(-10, 35) for _ in range(5)]
-    icons = ["☀️", "☁️", "🌧️", "❄️", "⛈️", "🌫️"]
-    return pd.DataFrame({"Dzień": dni_pl, "Temperatura (°C)": temps, "Ikona": [random.choice(icons) for _ in range(5)]})
+# ===================== STREAMLIT UI =====================
+st.title("🌍 Prognoza pogody – Europa")
 
-# --- Streamlit ---
-st.title("🌍 Mapa pogody – Europa")
-
-# --- Mapa PyDeck ---
+# ----- MAPA -----
 layer = pdk.Layer(
     "ScatterplotLayer",
-    data=df,
+    data=df_locations,
     get_position='[lon, lat]',
     get_radius=40000,
-    get_fill_color=[0, 100, 255, 180],
+    get_fill_color=[0, 120, 255, 180],
     pickable=True
 )
-view_state = pdk.ViewState(latitude=54, longitude=15, zoom=3.5, pitch=0)
-r = pdk.Deck(layers=[layer], initial_view_state=view_state, tooltip={"text": "{city}"})
-st.pydeck_chart(r)
 
-st.markdown("Kliknij w punkt na mapie lub wybierz miasto z listy:")
+view_state = pdk.ViewState(latitude=54, longitude=15, zoom=3.5)
+deck = pdk.Deck(layers=[layer], initial_view_state=view_state, tooltip={"text": "{city}"})
+st.pydeck_chart(deck)
 
-# --- Wybór miasta ---
-city_choice = st.selectbox("Miasto:", df["city"].tolist())
+# ----- WYBÓR MIASTA -----
+city_choice = st.selectbox("Wybierz miasto:", sorted(df_locations["city"].unique()))
 
 if city_choice:
     lat, lon = locations[city_choice]
-    forecast = get_current_weather(lat, lon)
+    weather = get_current_weather(lat, lon)
 
-    st.markdown(f"<h3 style='color:blue'>📍 {city_choice}</h3>", unsafe_allow_html=True)
+    st.markdown(f"## 📍 {city_choice}")
+
     col1, col2 = st.columns(2)
 
+    # ----- BIEŻĄCA POGODA -----
     with col1:
-        st.subheader("🌤 Bieżąca pogoda")
-        st.image(forecast['ikona'], width=100)
-        st.write(
-            f"**{forecast['opis']}**  \n"
-            f"🌡️ Temperatura: {forecast['temperatura']}°C  \n"
-            f"💧 Wilgotność: {forecast['wilgotność']}%  \n"
-            f"💨 Wiatr: {forecast['wiatr']} km/h"
+        st.subheader("🌤 Aktualna pogoda")
+        if weather:
+            st.image(weather["icon"], width=100)
+            st.write(
+                f"**{weather['desc']}**\n\n"
+                f"🌡️ {weather['temp']} °C\n\n"
+                f"💧 {weather['humidity']} %\n\n"
+                f"💨 {weather['wind']} km/h"
+            )
+        else:
+            st.warning("Brak danych z API")
+
+    # ----- PRAWDZIWA PROGNOZA 5 DNI -----
+    with col2:
+        st.subheader("📈 Prognoza na 5 dni")
+
+        df_city = (
+            df_forecast[df_forecast["city"] == city_choice]
+            .sort_values("date")
         )
 
-    # --- Prognoza 5-dniowa ---
-    df_5days = fake_forecast_5days()
-    with col2:
-        st.subheader("📈 Prognoza na kolejne 5 dni")
-        fig = px.line(df_5days, x="Dzień", y="Temperatura (°C)", markers=True, text="Ikona")
-        fig.update_traces(textposition="top center")
-        # pionowe linie dla czytelności
-        for x in df_5days["Dzień"]:
-            fig.add_vline(x=x, line_dash="dash", line_color="gray", opacity=0.3)
-        st.plotly_chart(fig, width="stretch")
+        if df_city.empty:
+            st.warning("Brak prognozy dla tego miasta")
+        else:
+            fig = px.line(
+                df_city,
+                x="date",
+                y="temp_avg",
+                markers=True,
+                labels={
+                    "date": "Data",
+                    "temp_forecast": "Temperatura (°C)"
+                }
+            )
+            fig.update_layout(
+                xaxis_tickformat="%d-%m",
+                hovermode="x unified"
+            )
+            st.plotly_chart(fig, use_container_width=True)
