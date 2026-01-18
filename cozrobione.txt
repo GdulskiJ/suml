@@ -1,7 +1,0 @@
-po kolei
-main1
-features
-savingmodels
-margeforecast
-streamlit run gui.py
-
