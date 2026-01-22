@@ -1,5 +1,9 @@
 # Predykcja pogody - SUML
+## Demo aplikacji
 
+Przetestuj działającą wersję naszej aplikacji Streamlit:
+
+[Aplikacja do przewidywania pogody](https://przewidywaniepogody.streamlit.app/)
 Projekt z przedmiotu Systemy Uczace sie Maszynowo.
 
 **Autorzy:** Jakub Gdulski (s27753), Adam Mielko (s27669)
