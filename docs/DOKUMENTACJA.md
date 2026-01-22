@@ -6,7 +6,7 @@
 - Jakub Gdulski (s27753)
 - Adam Mielko (s27669)
 
-**Link do repozytorium:** https://github.com/[UZUPELNIC]/suml
+**Link do aplikacji:** https://przewidywaniepogody.streamlit.app
 
 ---
 
