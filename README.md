@@ -1,12 +1,18 @@
 # Predykcja pogody - SUML
+
+Projekt z przedmiotu **Systemy Uczące się Maszynowo**.
+
 ## Demo aplikacji
 
 Przetestuj działającą wersję naszej aplikacji Streamlit:
 
-[Aplikacja do przewidywania pogody](https://przewidywaniepogody.streamlit.app/)
-Projekt z przedmiotu Systemy Uczace sie Maszynowo.
+[Aplikacja do przewidywania pogody](https://przewidywaniepogody.streamlit.app/)  
+URL do skopiowania: https://przewidywaniepogody.streamlit.app/
 
-**Autorzy:** Jakub Gdulski (s27753), Adam Mielko (s27669)
+## Autorzy
+
+- Jakub Gdulski (s27753)  
+- Adam Mielko (s27669)
 
 Predykcja temperatury dla europejskich stolic z uzyciem modeli LSTM, GRU i Prophet.
 
